@@ -5,4 +5,11 @@
     -   id: check-ast
     -   id: check-json
     -   id: check-yaml
+    -   id: end-of-file-fixer
 
+-   repo: local
+    hooks:
+    - id: mypy
+      name: mypy
+      entry: make mypy
+      language: system
