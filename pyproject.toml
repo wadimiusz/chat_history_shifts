@@ -4,11 +4,11 @@ version = "0.1.0"
 description = "This project is devoted to tracking semantic shifts in text messages over time."
 authors = ["Vadim Fomin <wadimiusz@gmail.com>"]
 readme = "README.md"
-packages = [{include = "chat_history_shifts"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 gensim = "^4.2.0"
+loguru = "^0.6.0"
 
 
 [build-system]
