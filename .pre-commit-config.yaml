@@ -14,3 +14,10 @@ repos:
       name: mypy
       entry: make mypy
       language: system
+
+-   repo: local
+    hooks:
+    - id: isort
+      name: isort
+      entry: poetry run isort .
+      language: system

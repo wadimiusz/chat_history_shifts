@@ -20,7 +20,7 @@ class ShiftsDetector:
     def args(self) -> Namespace:
         if self._args is None:
             parser = ArgumentParser()
-            parser.add_argument("-i", "--input", required=True)
+            parser.add_argument("-i", "--inputs", required=True, nargs="+")
             args = parser.parse_args()
             self._args = args
 
@@ -35,15 +35,21 @@ class ShiftsDetector:
     def slices(self) -> list[list[str]]:
         if self._slices is None:
             year_to_messages: dict[int, list[str]] = defaultdict(list)
-            logger.info("Loading messages from the .json file...")
-            with open(self.args.input) as f:
-                history = json.load(f)
+            logger.info("Loading messages from the JSON files...")
+            all_messages = list()
 
-            for message in history["messages"]:
-                message_text = self.get_message_text(message)
-                message_year = self.get_message_year(message)
-                if len(message_text) > 0:
-                    year_to_messages[message_year].append(message_text)
+            for path in self.args.input:
+                with open(path) as f:
+                    history = json.load(f)
+
+                all_messages.append(history["messages"])
+
+            for messages in all_messages:
+                for message in messages:
+                    message_text = self.get_message_text(message)
+                    message_year = self.get_message_year(message)
+                    if len(message_text) > 0:
+                        year_to_messages[message_year].append(message_text)
 
             self._slices = [year_to_messages[year] for year in sorted(year_to_messages.keys())]
             logger.info("Messages loaded")
