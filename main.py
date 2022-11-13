@@ -4,13 +4,20 @@ import json
 import re
 from argparse import ArgumentParser, Namespace
 from collections import defaultdict
+from functools import lru_cache
 from typing import Any
 
 import numpy as np
 import scipy.linalg
 from gensim.models import Word2Vec
 from loguru import logger
+from pymorphy2 import MorphAnalyzer
 from tqdm.auto import tqdm
+
+
+@lru_cache()
+def lemmatize(morph_analyzer: MorphAnalyzer, word: str) -> str:
+    return morph_analyzer.parse(word)[0].normal_form
 
 
 @dataclasses.dataclass
@@ -53,6 +60,7 @@ class ShiftsDetector:
         self._args: Namespace | None = None
         self._slices: list[list[str]] | None = None
         self._models: list[Word2Vec] | None = None
+        self.morph_analyzer = MorphAnalyzer()
 
     @property
     def args(self) -> Namespace:
@@ -90,9 +98,8 @@ class ShiftsDetector:
 
         return self._slices
 
-    @staticmethod
-    def tokenize(text: str) -> list[str]:
-        tokens = [x.lower() for x in re.findall(r"\b\w+\b", text) if x.isalpha()]
+    def normalize(self, text: str) -> list[str]:
+        tokens = [lemmatize(morph_analyzer=self.morph_analyzer, word=token).lower() for token in re.findall(r"\b\w+\b", text) if token.isalpha()]
         return tokens
 
     @property
@@ -100,8 +107,8 @@ class ShiftsDetector:
         if self._models is None:
             models = list()
             for messages in tqdm(self.slices, desc="Training a word2vec model for each slice..."):
-                tokenized_sentences = [self.tokenize(sentence) for sentence in messages]
-                model = Word2Vec(sentences=tokenized_sentences, vector_size=300, window=5, min_count=1)
+                tokenized_sentences = [self.normalize(sentence) for sentence in messages]
+                model = Word2Vec(sentences=tokenized_sentences, vector_size=300, window=5, min_count=10)
                 models.append(model)
 
             self._models = models
