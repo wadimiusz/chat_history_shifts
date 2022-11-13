@@ -12,6 +12,7 @@ loguru = "^0.6.0"
 mypy = "^0.990"
 tqdm = "^4.64.1"
 pre-commit = "^2.20.0"
+isort = "^5.10.1"
 
 
 [build-system]
