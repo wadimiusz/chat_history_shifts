@@ -6,6 +6,7 @@ from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from typing import Any
 
+import numpy as np
 from gensim.models import Word2Vec
 from loguru import logger
 from tqdm.auto import tqdm
@@ -18,13 +19,13 @@ class Message:
     user: str
 
     @classmethod
-    def get_message_text(self, message: str | list[Any] | dict[str, Any]) -> str:
+    def get_message_text(cls, message: str | list[Any] | dict[str, Any]) -> str:
         if isinstance(message, str):
             return message
         elif isinstance(message, list):
-            return "".join(self.get_message_text(submessage) for submessage in message)
+            return "".join(cls.get_message_text(submessage) for submessage in message)
         elif isinstance(message, dict):
-            return self.get_message_text(message["text"])
+            return cls.get_message_text(message["text"])
 
         raise TypeError(f"The `message` argument is of type {type(message)}. Expected string, list, or dict")
 
