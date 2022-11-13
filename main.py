@@ -1,12 +1,12 @@
+import datetime
 import json
-import random
 import re
 from argparse import ArgumentParser, Namespace
+from collections import defaultdict
+from typing import Any
+
 from gensim.models import Word2Vec
 from loguru import logger
-from typing import Any
-from collections import defaultdict
-import datetime
 from tqdm.auto import tqdm
 
 
