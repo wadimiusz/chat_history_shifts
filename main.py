@@ -10,7 +10,7 @@ from typing import Any
 class ShiftsDetector:
     def __init__(self):
         self._args: Namespace | None = None
-        self._messages: Namespace | None = None
+        self._messages: list[str] | None = None
         self._model: Word2Vec | None = None
 
     @property
