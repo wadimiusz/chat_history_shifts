@@ -81,6 +81,7 @@ class ShiftsDetector:
 
 def main():
     shifts_detector = ShiftsDetector()
+    shifts_detector.models
 
 
 if __name__ == '__main__':
