@@ -5,13 +5,16 @@ from argparse import ArgumentParser, Namespace
 from gensim.models import Word2Vec
 from loguru import logger
 from typing import Any
+from collections import defaultdict
+import datetime
+from tqdm.auto import tqdm
 
 
 class ShiftsDetector:
     def __init__(self):
         self._args: Namespace | None = None
-        self._messages: list[str] | None = None
-        self._model: Word2Vec | None = None
+        self._slices: list[list[str]] | None = None
+        self._models: list[Word2Vec] | None = None
 
     @property
     def args(self) -> Namespace:
@@ -23,30 +26,36 @@ class ShiftsDetector:
 
         return self._args
 
+    @staticmethod
+    def get_message_year(message: dict[str, Any]) -> int:
+        time = datetime.datetime.fromisoformat(message["date"])
+        return time.year
+
     @property
-    def messages(self) -> list[str]:
-        if self._messages is None:
+    def slices(self) -> list[list[str]]:
+        if self._slices is None:
+            year_to_messages: dict[int, list[str]] = defaultdict(list)
             logger.info("Loading messages from the .json file...")
             with open(self.args.input) as f:
                 history = json.load(f)
 
-            messages = list()
             for message in history["messages"]:
                 message_text = self.get_message_text(message)
+                message_year = self.get_message_year(message)
                 if len(message_text) > 0:
-                    messages.append(message_text)
+                    year_to_messages[message_year].append(message_text)
 
-            self._messages = messages
+            self._slices = [year_to_messages[year] for year in sorted(year_to_messages.keys())]
             logger.info("Messages loaded")
 
-        return self._messages
+        return self._slices
 
     @staticmethod
     def tokenize(text: str) -> list[str]:
         tokens = [x.lower() for x in re.findall(r"\b\w+\b", text) if x.isalpha()]
         return tokens
 
-    def get_message_text(self, message: str | list[Any] | dict[Any, Any]) -> str:
+    def get_message_text(self, message: str | list[Any] | dict[str, Any]) -> str:
         if isinstance(message, str):
             return message
         elif isinstance(message, list):
@@ -57,16 +66,17 @@ class ShiftsDetector:
         raise TypeError(f"The `message` argument is of type {type(message)}. Expected string, list, or dict")
 
     @property
-    def model(self) -> Word2Vec:
-        if self._model is None:
-            logger.info("Tokenizing sentences...")
-            tokenized_sentences = [self.tokenize(sentence) for sentence in self.messages]
-            logger.info(f"Training a word2vec model on {len(tokenized_sentences)} messages...")
-            model = Word2Vec(sentences=tokenized_sentences, vector_size=300, window=5, min_count=1)
-            logger.info("Training finished.")
-            self._model = model
+    def models(self) -> list[Word2Vec]:
+        if self._models is None:
+            models = list()
+            for messages in tqdm(self.slices, desc="Training a word2vec model for each slice..."):
+                tokenized_sentences = [self.tokenize(sentence) for sentence in messages]
+                model = Word2Vec(sentences=tokenized_sentences, vector_size=300, window=5, min_count=1)
+                models.append(model)
 
-        return self._model
+            self._models = models
+
+        return self._models
 
 
 def main():
