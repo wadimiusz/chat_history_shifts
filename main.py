@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import Any
 
 import numpy as np
+import scipy.linalg
 from gensim.models import Word2Vec
 from loguru import logger
 from tqdm.auto import tqdm
@@ -71,7 +72,7 @@ class ShiftsDetector:
             logger.info("Loading messages from the JSON files...")
             all_messages: list[list[dict[str, Any]]] = list()
 
-            for path in self.args.input:
+            for path in self.args.inputs:
                 with open(path) as f:
                     history = json.load(f)
 
@@ -107,9 +108,34 @@ class ShiftsDetector:
 
         return self._models
 
+    def get_changes_between_two_models(self, model_i: int, model_j: int, top_n: int) -> list[str]:
+        keyed_vectors_i = self.models[model_i].wv
+        keyed_vectors_j = self.models[model_j].wv
+
+        keys_i = set(keyed_vectors_i.key_to_index.keys())
+        keys_j = set(keyed_vectors_j.key_to_index.keys())
+
+        common_keys = sorted(keys_i & keys_j)
+
+        matrix_i = np.vstack([keyed_vectors_i.get_vector(key) for key in common_keys])
+        matrix_j = np.vstack([keyed_vectors_j.get_vector(key) for key in common_keys])
+
+        mapping, _ = scipy.linalg.orthogonal_procrustes(matrix_i, matrix_j)
+        matrix_i_aligned = matrix_i @ mapping
+
+        scores = (matrix_i_aligned * matrix_j).sum(-1)
+        indices_sorted_by_score = scores.argsort()
+
+        changed_words_indices = indices_sorted_by_score[:top_n]
+
+        changed_words = [common_keys[idx] for idx in changed_words_indices]
+        return changed_words
+
 
 def main():
     shifts_detector = ShiftsDetector()
+    words = shifts_detector.get_changes_between_two_models(-1, -2, 10)
+    logger.info(f"The most changed words are: {', '.join(words)}")
 
 
 if __name__ == '__main__':

@@ -293,7 +293,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "c28cc169ec33e75bf4849af90eab5c1fe4ca1f1893b0073c3e9db2be5bd98341"
+content-hash = "0a69c30be524e04c6badd4487388abe99b58f23d350ff2caec00ab6f59d7d82a"
 
 [metadata.files]
 cfgv = [
