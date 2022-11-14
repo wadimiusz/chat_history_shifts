@@ -14,6 +14,7 @@ tqdm = "^4.64.1"
 pre-commit = "^2.20.0"
 isort = "^5.10.1"
 scipy = "^1.9.3"
+pymorphy2 = "^0.9.1"
 
 
 [build-system]
